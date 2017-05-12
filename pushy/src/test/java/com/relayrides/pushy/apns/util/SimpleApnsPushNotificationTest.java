@@ -26,6 +26,7 @@ public class SimpleApnsPushNotificationTest {
         assertNull(pushNotification.getExpiration());
         assertEquals(DeliveryPriority.IMMEDIATE, pushNotification.getPriority());
         assertNull(pushNotification.getCollapseId());
+        assertNull(pushNotification.getApnsId());
     }
 
     @Test(expected = NullPointerException.class)
@@ -59,6 +60,7 @@ public class SimpleApnsPushNotificationTest {
         assertEquals(expiration, pushNotification.getExpiration());
         assertEquals(DeliveryPriority.IMMEDIATE, pushNotification.getPriority());
         assertNull(pushNotification.getCollapseId());
+        assertNull(pushNotification.getApnsId());
     }
 
     @Test
@@ -78,6 +80,7 @@ public class SimpleApnsPushNotificationTest {
         assertEquals(expiration, pushNotification.getExpiration());
         assertEquals(priority, pushNotification.getPriority());
         assertNull(pushNotification.getCollapseId());
+        assertNull(pushNotification.getApnsId());
     }
 
     @Test
@@ -98,5 +101,28 @@ public class SimpleApnsPushNotificationTest {
         assertEquals(expiration, pushNotification.getExpiration());
         assertEquals(priority, pushNotification.getPriority());
         assertEquals(collapseId, pushNotification.getCollapseId());
+        assertNull(pushNotification.getApnsId());
+    }
+
+    @Test
+    public void testSimpleApnsPushNotificationTokenTopicPayloadExpirationPriorityCollapseIdApnsId() {
+        final String token = "test-token";
+        final String topic = "test-topic";
+        final String payload = "{\"test\": true}";
+        final Date expiration = new Date();
+        final DeliveryPriority priority = DeliveryPriority.CONSERVE_POWER;
+        final String collapseId = "test-collapse-id";
+        final String apnsId = "test-apns-id";
+
+        final SimpleApnsPushNotification pushNotification =
+                new SimpleApnsPushNotification(token, topic, payload, expiration, priority, collapseId, apnsId);
+
+        assertEquals(token, pushNotification.getToken());
+        assertEquals(topic, pushNotification.getTopic());
+        assertEquals(payload, pushNotification.getPayload());
+        assertEquals(expiration, pushNotification.getExpiration());
+        assertEquals(priority, pushNotification.getPriority());
+        assertEquals(collapseId, pushNotification.getCollapseId());
+        assertEquals(apnsId, pushNotification.getApnsId());
     }
 }

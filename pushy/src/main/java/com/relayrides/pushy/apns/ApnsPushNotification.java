@@ -99,4 +99,14 @@ public interface ApnsPushNotification {
      * @since 0.8.1
      */
     String getCollapseId();
+
+    /**
+     * Returns an optional identifier for this notification that is specified in the apns-id header when sending.
+     * Must be a string in the form of a `Canonical UUID` (ex. 123e4567-e89b-12d3-a456-42665544000)
+     *
+     * @return an apns identifier for this notification; may be {@code null}
+     *
+     * @since 0.9.4
+     */
+    String getApnsId();
 }
