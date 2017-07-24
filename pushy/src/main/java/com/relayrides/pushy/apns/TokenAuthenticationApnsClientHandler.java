@@ -46,14 +46,19 @@ class TokenAuthenticationApnsClientHandler extends ApnsClientHandler {
             Objects.requireNonNull(this.authority(), "Authority must be set before building a TokenAuthenticationApnsClientHandler.");
             Objects.requireNonNull(this.signingKey(), "Signing key must be set before building a TokenAuthenticationApnsClientHandler.");
 
-            final ApnsClientHandler handler = new TokenAuthenticationApnsClientHandler(decoder, encoder, initialSettings, this.authority(), this.signingKey(), this.idlePingIntervalMillis(), this.getHandlerMetrics());
+            final ApnsClientHandler handler = new TokenAuthenticationApnsClientHandler(decoder, encoder, initialSettings,
+                    this.authority(), this.signingKey(), this.idlePingIntervalMillis(), this.responseTimeoutMillis(),
+                    this.getHandlerMetrics());
             this.frameListener(handler);
             return handler;
         }
     }
 
-    protected TokenAuthenticationApnsClientHandler(final Http2ConnectionDecoder decoder, final Http2ConnectionEncoder encoder, final Http2Settings initialSettings, final String authority, final ApnsSigningKey signingKey, final long idlePingIntervalMillis, HandlerMetrics metrics) {
-        super(decoder, encoder, initialSettings, authority, idlePingIntervalMillis, metrics);
+    protected TokenAuthenticationApnsClientHandler(final Http2ConnectionDecoder decoder, final Http2ConnectionEncoder encoder,
+                                                   final Http2Settings initialSettings, final String authority,
+                                                   final ApnsSigningKey signingKey, final long idlePingIntervalMillis,
+                                                   final long responseTimeoutMillis, HandlerMetrics metrics) {
+        super(decoder, encoder, initialSettings, authority, idlePingIntervalMillis, responseTimeoutMillis, metrics);
 
         Objects.requireNonNull(signingKey, "Signing key must not be null for token-based client handlers.");
         this.signingKey = signingKey;

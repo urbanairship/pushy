@@ -74,6 +74,9 @@ public class ApnsClientBuilder {
     private Long idlePingInterval;
     private TimeUnit idlePingIntervalUnit;
 
+    private Long responseTimeout;
+    private TimeUnit responseTimeoutUnit;
+
     private Long gracefulShutdownTimeout;
     private TimeUnit gracefulShutdownTimeoutUnit;
 
@@ -370,6 +373,26 @@ public class ApnsClientBuilder {
         return this;
     }
 
+
+    /**
+     * Sets the amount of time (in milliseconds) to wait on a response from APNS before marking a notification as failed
+     * with a TimeoutException. By default, clients will wait
+     * {@value com.relayrides.pushy.apns.ApnsClient#DEFAULT_PING_IDLE_TIME_MILLIS} before marking the response as failed.
+     *
+     * @param responseTimeout the amount of time to wait for a response from APNS
+     * @param responseTimeoutUnit the time unit for the given response time
+     *
+     * @return a reference to this builder
+     *
+     * @since 0.10
+     */
+    public ApnsClientBuilder setResponseTimeout(final long responseTimeout, final TimeUnit responseTimeoutUnit) {
+        this.responseTimeout = responseTimeout;
+        this.responseTimeoutUnit = responseTimeoutUnit;
+
+        return this;
+    }
+
     /**
      * Sets the amount of time clients should wait for in-progress requests to complete before closing a connection
      * during a graceful shutdown.
@@ -500,6 +523,10 @@ public class ApnsClientBuilder {
 
         if (this.idlePingInterval != null) {
             apnsClient.setPingInterval(this.idlePingIntervalUnit.toMillis(this.idlePingInterval));
+        }
+
+        if (this.responseTimeout != null) {
+            apnsClient.setResponseTimeoutMillis(this.responseTimeoutUnit.toMillis(this.responseTimeout));
         }
 
         if (this.gracefulShutdownTimeout != null) {

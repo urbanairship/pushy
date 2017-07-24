@@ -40,6 +40,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameListener, Http2Connection.Listener {
 
@@ -51,6 +52,7 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
 
     private ScheduledFuture<?> pingTimeoutFuture;
     private long pingTimeoutMillis;
+    private long responseTimeoutMillis;
     private HandlerMetrics metrics;
 
     private static final String APNS_PATH_PREFIX = "/3/device/";
@@ -68,6 +70,9 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
     private static final ClientNotConnectedException STREAM_CLOSED_BEFORE_REPLY_EXCEPTION =
             new ClientNotConnectedException("Stream closed before a reply was received");
 
+    public static final TimeoutException TIMEOUT_EXCEPTION =
+            new TimeoutException("Timed out writing notification");
+
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Date.class, new DateAsTimeSinceEpochTypeAdapter(TimeUnit.MILLISECONDS))
             .create();
@@ -80,6 +85,7 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
 
         private String authority;
         private long idlePingIntervalMillis;
+        private long responseTimeoutMillis;
 
         public ApnsClientHandlerBuilder authority(final String authority) {
             this.authority = authority;
@@ -96,6 +102,15 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
 
         public ApnsClientHandlerBuilder idlePingIntervalMillis(long idlePingIntervalMillis) {
             this.idlePingIntervalMillis = idlePingIntervalMillis;
+            return this;
+        }
+
+        public long responseTimeoutMillis() {
+            return responseTimeoutMillis;
+        }
+
+        public ApnsClientHandlerBuilder responseTimeoutMillis(long responseTimeoutMillis) {
+            this.responseTimeoutMillis = responseTimeoutMillis;
             return this;
         }
 
@@ -122,7 +137,8 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
         public ApnsClientHandler build(final Http2ConnectionDecoder decoder, final Http2ConnectionEncoder encoder, final Http2Settings initialSettings) {
             Objects.requireNonNull(this.authority(), "Authority must be set before building an ApnsClientHandler.");
 
-            final ApnsClientHandler handler = new ApnsClientHandler(decoder, encoder, initialSettings, this.authority(), this.idlePingIntervalMillis(), this.getHandlerMetrics());
+            final ApnsClientHandler handler = new ApnsClientHandler(decoder, encoder, initialSettings, this.authority(),
+                    this.idlePingIntervalMillis(), this.responseTimeoutMillis(), this.getHandlerMetrics());
             this.frameListener(handler);
             return handler;
         }
@@ -134,7 +150,7 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
     }
 
     protected ApnsClientHandler(final Http2ConnectionDecoder decoder, final Http2ConnectionEncoder encoder, final Http2Settings initialSettings, final String authority, final long idlePingIntervalMillis,
-                                HandlerMetrics metrics) {
+                                final long responseTimeoutMillis, HandlerMetrics metrics) {
         super(decoder, encoder, initialSettings);
 
         this.authority = authority;
@@ -146,6 +162,7 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
         this.metrics = metrics;
 
         this.pingTimeoutMillis = idlePingIntervalMillis / 2;
+        this.responseTimeoutMillis = responseTimeoutMillis;
     }
 
     @Override
@@ -206,6 +223,12 @@ class ApnsClientHandler extends Http2ConnectionHandler implements Http2FrameList
 
                         stream.setProperty(ApnsClientHandler.this.pushNotificationPropertyKey, pushNotification);
                         stream.setProperty(ApnsClientHandler.this.responsePromisePropertyKey, responsePromise);
+                        context.executor().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                responsePromise.tryFailure(TIMEOUT_EXCEPTION);
+                            }
+                        }, responseTimeoutMillis, TimeUnit.MILLISECONDS);
                     } else {
                         log.trace("Failed to write push notification on stream {}.", streamId, future.cause());
                         responsePromise.tryFailure(future.cause());

@@ -99,6 +99,7 @@ public class ApnsClient {
 
     private Long gracefulShutdownTimeoutMillis;
     long idlePingIntervalMillis = DEFAULT_PING_IDLE_TIME_MILLIS;
+    private long responseTimeoutMillis = DEFAULT_RESPONSE_TIMEOUT_MILLIS;
 
     private volatile ChannelPromise connectionReadyPromise;
     private volatile ChannelPromise reconnectionPromise;
@@ -149,6 +150,7 @@ public class ApnsClient {
      * @since 0.10
      */
     public static final int DEFAULT_PING_IDLE_TIME_MILLIS = 60_000;
+    public static final int DEFAULT_RESPONSE_TIMEOUT_MILLIS = 30_000;
 
     private static final ClientNotConnectedException NOT_CONNECTED_EXCEPTION = new ClientNotConnectedException();
     private static final ClientBusyException CLIENT_BUSY_EXCEPTION = new ClientBusyException();
@@ -207,12 +209,14 @@ public class ApnsClient {
                                         .signingKey(ApnsClient.this.signingKey)
                                         .authority(authority)
                                         .idlePingIntervalMillis(ApnsClient.this.idlePingIntervalMillis)
+                                        .responseTimeoutMillis(ApnsClient.this.responseTimeoutMillis)
                                         .setHandlerMetrics(handlerMetrics)
                                         .build();
                             } else {
                                 apnsClientHandler = new ApnsClientHandler.ApnsClientHandlerBuilder()
                                         .authority(authority)
                                         .idlePingIntervalMillis(ApnsClient.this.idlePingIntervalMillis)
+                                        .responseTimeoutMillis(ApnsClient.this.responseTimeoutMillis)
                                         .setHandlerMetrics(handlerMetrics)
                                         .build();
                             }
@@ -306,6 +310,20 @@ public class ApnsClient {
     protected void setPingInterval(final long pingIntervalMillis) {
         this.idlePingIntervalMillis = pingIntervalMillis;
     }
+
+    /**
+     * Sets the amount of time (in milliseconds) to wait on a response from APNS before marking a notification as failed
+     * with a TimeoutException
+     *
+     * @param responseTimeoutMillis the amount of time in milliseconds after a notification write before the response
+     *                              future is marked as a failure
+     *
+     * @since 0.10
+     */
+    protected void setResponseTimeoutMillis(final long responseTimeoutMillis) {
+        this.responseTimeoutMillis = responseTimeoutMillis;
+    }
+
 
     /**
      * Sets the amount of time (in milliseconds) clients should wait for in-progress requests to complete before closing
