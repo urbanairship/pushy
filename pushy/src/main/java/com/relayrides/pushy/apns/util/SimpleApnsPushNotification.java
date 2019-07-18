@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import com.relayrides.pushy.apns.ApnsPushNotification;
 import com.relayrides.pushy.apns.DeliveryPriority;
+import com.relayrides.pushy.apns.PushType;
 
 /**
  * A simple and immutable implementation of the {@link com.relayrides.pushy.apns.ApnsPushNotification} interface.
@@ -170,6 +171,11 @@ public class SimpleApnsPushNotification implements ApnsPushNotification {
     @Override
     public DeliveryPriority getPriority() {
         return this.priority;
+    }
+
+    @Override
+    public PushType getPushType() {
+        return null;
     }
 
     /**
